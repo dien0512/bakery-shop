@@ -1,0 +1,31 @@
+# =============================================================
+# Stage 1: Build
+# =============================================================
+FROM maven:3.9.6-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+COPY pom.xml .
+RUN mvn dependency:go-offline -q
+
+COPY src ./src
+RUN mvn package -DskipTests -q
+
+# =============================================================
+# Stage 2: Runtime
+# =============================================================
+FROM eclipse-temurin:21-jre
+
+WORKDIR /deployments
+
+COPY --from=build /app/target/quarkus-app/lib/ ./lib/
+COPY --from=build /app/target/quarkus-app/*.jar ./
+COPY --from=build /app/target/quarkus-app/app/ ./app/
+COPY --from=build /app/target/quarkus-app/quarkus/ ./quarkus/
+
+ARG PORT=8080
+EXPOSE ${PORT}
+
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar quarkus-run.jar"]
