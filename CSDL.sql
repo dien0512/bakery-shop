@@ -104,6 +104,8 @@ CREATE TABLE `orders` (
   `status` enum('PENDING','CONFIRMED','SHIPPING','COMPLETED','CANCELLED') DEFAULT 'PENDING',
   `payment_status` enum('UNPAID','PAID','FAILED') DEFAULT 'UNPAID',
   `payment_method` enum('COD','VNPAY') DEFAULT 'COD',
+  `source` enum('DIRECT','AI_CONCIERGE') NOT NULL DEFAULT 'DIRECT',
+  `ai_recommendation_id` char(36) DEFAULT NULL,
   `shipping_address` varchar(255) DEFAULT NULL,
   `receiver_name` varchar(100) DEFAULT NULL,
   `receiver_phone` varchar(20) DEFAULT NULL,
@@ -161,6 +163,9 @@ UNLOCK TABLES;
 -- Table structure for table `products`
 --
 
+DROP TABLE IF EXISTS `product_allergens`;
+DROP TABLE IF EXISTS `product_dietary_tags`;
+DROP TABLE IF EXISTS `product_flavor_tags`;
 DROP TABLE IF EXISTS `products`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -170,6 +175,9 @@ CREATE TABLE `products` (
   `price` decimal(12,2) NOT NULL,
   `stock` int DEFAULT '0',
   `description` text,
+  `portion_count` int DEFAULT '1',
+  `ingredients` text,
+  `allergen_info_complete` tinyint(1) NOT NULL DEFAULT '0',
   `category_id` char(36) DEFAULT NULL,
   `status` enum('ACTIVE','OUT_OF_STOCK','DISABLED') DEFAULT 'ACTIVE',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -189,6 +197,42 @@ LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `product_flavor_tags`
+--
+
+DROP TABLE IF EXISTS `product_flavor_tags`;
+CREATE TABLE `product_flavor_tags` (
+  `product_id` char(36) NOT NULL,
+  `tag` varchar(50) NOT NULL,
+  PRIMARY KEY (`product_id`,`tag`),
+  CONSTRAINT `fk_flavor_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Table structure for table `product_dietary_tags`
+--
+
+DROP TABLE IF EXISTS `product_dietary_tags`;
+CREATE TABLE `product_dietary_tags` (
+  `product_id` char(36) NOT NULL,
+  `tag` varchar(50) NOT NULL,
+  PRIMARY KEY (`product_id`,`tag`),
+  CONSTRAINT `fk_dietary_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Table structure for table `product_allergens`
+--
+
+DROP TABLE IF EXISTS `product_allergens`;
+CREATE TABLE `product_allergens` (
+  `product_id` char(36) NOT NULL,
+  `allergen` varchar(50) NOT NULL,
+  PRIMARY KEY (`product_id`,`allergen`),
+  CONSTRAINT `fk_allergen_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Table structure for table `users`

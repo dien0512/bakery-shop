@@ -16,6 +16,7 @@ public class GatewayResource {
     @Inject @RestClient ProductServiceClient productClient;
     @Inject @RestClient OrderServiceClient orderClient;
     @Inject @RestClient NotificationServiceClient notificationClient;
+    @Inject @RestClient AiServiceClient aiClient;
 
     // ═══════════════════════════════════════════
     // USER SERVICE (port 8081)
@@ -89,4 +90,19 @@ public class GatewayResource {
     @GET    @Path("/notifications/{p: .+}")     public Response notifGet(@PathParam("p") String p, @HeaderParam("Authorization") String a) { return notificationClient.get("api/notifications/" + p, a); }
     @POST   @Path("/notifications")             public Response notifPostRoot(@HeaderParam("Authorization") String a, String b) { return notificationClient.post("api/notifications", a, b); }
     @POST   @Path("/notifications/{p: .+}")     public Response notifPost(@PathParam("p") String p, @HeaderParam("Authorization") String a, String b) { return notificationClient.post("api/notifications/" + p, a, b); }
+
+    // ═══════════════════════════════════════════
+    // AI BAKERY CONCIERGE (port 8085)
+    // /api/ai/consultations/**
+    // ═══════════════════════════════════════════
+
+    @GET    @Path("/ai/consultations/questions")
+    public Response aiQuestions(@HeaderParam("Authorization") String a) {
+        return aiClient.get("api/ai/consultations/questions", a);
+    }
+
+    @POST   @Path("/ai/consultations")
+    public Response aiConsult(@HeaderParam("Authorization") String a, String b) {
+        return aiClient.post("api/ai/consultations", a, b);
+    }
 }

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 public class ProductRequest {
 
@@ -22,6 +23,19 @@ public class ProductRequest {
     public Integer stock = 0;
 
     public String description;
+
+    @Min(value = 1, message = "Portion count must be at least 1")
+    public Integer portionCount;
+
+    public String ingredients;
+
+    public Set<String> flavorTags;
+
+    public Set<String> dietaryTags;
+
+    public Set<String> allergens;
+
+    public Boolean allergenInfoComplete;
 
     public String categoryId;
 }

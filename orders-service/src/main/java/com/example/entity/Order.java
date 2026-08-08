@@ -44,6 +44,14 @@ public class Order extends PanacheEntityBase {
     @Column(name = "payment_method", length = 10)
     private PaymentMethod paymentMethod = PaymentMethod.COD;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "source", length = 20, nullable = false)
+    private OrderSource source = OrderSource.DIRECT;
+
+    @Column(name = "ai_recommendation_id", length = 36)
+    private String aiRecommendationId;
+
     @Column(name = "shipping_address", length = 255)
     private String shippingAddress;
 
@@ -71,6 +79,7 @@ public class Order extends PanacheEntityBase {
     public enum OrderStatus { PENDING, CONFIRMED, SHIPPING, COMPLETED, CANCELLED }
     public enum PaymentStatus { UNPAID, PAID, FAILED }
     public enum PaymentMethod { COD, VNPAY }
+    public enum OrderSource { DIRECT, AI_CONCIERGE }
 
     public static List<Order> findByUserId(String userId, int page, int size) {
         return find("userId = ?1", Sort.by("createdAt").descending(), userId)

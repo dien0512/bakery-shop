@@ -54,6 +54,15 @@ public class OrderService {
     public OrderResponse createOrder(OrderRequest req) {
         String userId = jwt.getSubject();
 
+        if (req.source == Order.OrderSource.AI_CONCIERGE &&
+                (req.aiRecommendationId == null || req.aiRecommendationId.isBlank())) {
+            throw new BadRequestException("AI recommendation ID is required for AI concierge orders");
+        }
+        if (req.source != Order.OrderSource.AI_CONCIERGE) {
+            req.source = Order.OrderSource.DIRECT;
+            req.aiRecommendationId = null;
+        }
+
         List<OrderItem> items = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
 
@@ -91,6 +100,8 @@ public class OrderService {
                 .userId(userId)
                 .totalPrice(total)
                 .paymentMethod(req.paymentMethod)
+                .source(req.source != null ? req.source : Order.OrderSource.DIRECT)
+                .aiRecommendationId(req.aiRecommendationId)
                 .shippingAddress(req.shippingAddress)
                 .receiverName(req.receiverName)
                 .receiverPhone(req.receiverPhone)

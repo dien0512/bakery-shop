@@ -1,0 +1,32 @@
+# =============================================================
+# Stage 1: Build
+# =============================================================
+FROM maven:3.9.6-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+COPY pom.xml .
+COPY ai-service/pom.xml ai-service/pom.xml
+RUN mvn -f ai-service/pom.xml dependency:go-offline -q
+
+COPY ai-service/src ai-service/src
+RUN mvn -f ai-service/pom.xml package -DskipTests -q
+
+# =============================================================
+# Stage 2: Runtime
+# =============================================================
+FROM eclipse-temurin:21-jre
+
+WORKDIR /deployments
+
+COPY --from=build /app/ai-service/target/quarkus-app/lib/ ./lib/
+COPY --from=build /app/ai-service/target/quarkus-app/*.jar ./
+COPY --from=build /app/ai-service/target/quarkus-app/app/ ./app/
+COPY --from=build /app/ai-service/target/quarkus-app/quarkus/ ./quarkus/
+
+ARG PORT=8085
+EXPOSE ${PORT}
+
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar quarkus-run.jar"]

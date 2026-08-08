@@ -13,6 +13,8 @@ public class OrderResponse {
     public Order.OrderStatus status;
     public Order.PaymentStatus paymentStatus;
     public Order.PaymentMethod paymentMethod;
+    public Order.OrderSource source;
+    public String aiRecommendationId;
     public String shippingAddress;
     public String receiverName;
     public String receiverPhone;

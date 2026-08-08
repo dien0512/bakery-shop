@@ -14,7 +14,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./CSDL.sql:/docker-entrypoint-initdb.d/CSDL.sql
     networks:
       - bakery-network
     healthcheck:
@@ -100,6 +100,32 @@ services:
     networks:
       - bakery-network
 
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/src/main/docker/Dockerfile.jvm
+      args:
+        PORT: 8085
+    container_name: ai-service
+    depends_on:
+      product-service:
+        condition: service_started
+    environment:
+      PRODUCT_SERVICE_URL: http://product-service:8082
+      JWT_ISSUER: bakery-shop
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.6-luna}
+      OPENAI_REASONING_EFFORT: ${OPENAI_REASONING_EFFORT:-none}
+      OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-8}
+      OPENAI_MAX_OUTPUT_TOKENS: ${OPENAI_MAX_OUTPUT_TOKENS:-800}
+      AI_MAX_CANDIDATES: ${AI_MAX_CANDIDATES:-20}
+      AI_MAX_RECOMMENDATIONS: ${AI_MAX_RECOMMENDATIONS:-3}
+      AI_CONCIERGE_ENABLED: ${AI_CONCIERGE_ENABLED:-true}
+    ports:
+      - "8085:8085"
+    networks:
+      - bakery-network
+
   orders-service:
     build:
       context: ./orders-service
@@ -164,6 +190,7 @@ services:
       - product-service
       - orders-service
       - notification-service
+      - ai-service
     ports:
       - "8080:8080"
     networks:

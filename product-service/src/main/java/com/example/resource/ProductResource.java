@@ -1,6 +1,7 @@
 package com.example.resource;
 
 import com.example.dto.request.ProductRequest;
+import com.example.dto.request.ConsultationFilterRequest;
 import com.example.dto.request.StockAdjustRequest;
 import com.example.dto.response.PageResponse;
 import com.example.dto.response.ProductResponse;
@@ -14,6 +15,8 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+import java.util.List;
 
 @Path("/api/products")
 @Produces(MediaType.APPLICATION_JSON)
@@ -39,6 +42,13 @@ public class ProductResource {
     @Operation(summary = "Get product by ID")
     public ProductResponse getProduct(@PathParam("id") String id) {
         return productService.getProduct(id);
+    }
+
+    @POST
+    @Path("/internal/candidates")
+    @Operation(summary = "[Internal] Find deterministic AI consultation candidates")
+    public List<ProductResponse> findConsultationCandidates(ConsultationFilterRequest request) {
+        return productService.findConsultationCandidates(request);
     }
 
     @POST
