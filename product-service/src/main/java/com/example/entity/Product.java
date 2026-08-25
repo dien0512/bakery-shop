@@ -11,7 +11,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "products",
@@ -43,6 +45,35 @@ public class Product extends PanacheEntityBase {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "portion_count", columnDefinition = "INT DEFAULT 1")
+    @Builder.Default
+    private Integer portionCount = 1;
+
+    @Column(columnDefinition = "TEXT")
+    private String ingredients;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "product_flavor_tags", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "tag", length = 50)
+    @Builder.Default
+    private Set<String> flavorTags = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "product_dietary_tags", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "tag", length = 50)
+    @Builder.Default
+    private Set<String> dietaryTags = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "product_allergens", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "allergen", length = 50)
+    @Builder.Default
+    private Set<String> allergens = new HashSet<>();
+
+    @Column(name = "allergen_info_complete", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
+    private boolean allergenInfoComplete = false;
 
     @Column(name = "category_id", length = 36)
     private String categoryId;

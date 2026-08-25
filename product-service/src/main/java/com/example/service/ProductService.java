@@ -1,6 +1,7 @@
 package com.example.service;
 
 import com.example.dto.request.CategoryRequest;
+import com.example.dto.request.ConsultationFilterRequest;
 import com.example.dto.request.ProductRequest;
 import com.example.dto.response.CategoryResponse;
 import com.example.dto.response.PageResponse;
@@ -20,6 +21,8 @@ import org.jboss.logging.Logger;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -136,6 +139,12 @@ public class ProductService {
                 .price(req.price)
                 .stock(stock)
                 .description(req.description)
+                .portionCount(req.portionCount != null ? req.portionCount : 1)
+                .ingredients(req.ingredients)
+                .flavorTags(normalizeTags(req.flavorTags))
+                .dietaryTags(normalizeTags(req.dietaryTags))
+                .allergens(normalizeTags(req.allergens))
+                .allergenInfoComplete(Boolean.TRUE.equals(req.allergenInfoComplete))
                 .categoryId(req.categoryId)
                 .status(status)
                 .build();
@@ -159,6 +168,12 @@ public class ProductService {
         if (req.name != null) product.setName(req.name.trim());
         if (req.price != null) product.setPrice(req.price);
         if (req.description != null) product.setDescription(req.description);
+        if (req.portionCount != null) product.setPortionCount(req.portionCount);
+        if (req.ingredients != null) product.setIngredients(req.ingredients);
+        if (req.flavorTags != null) product.setFlavorTags(normalizeTags(req.flavorTags));
+        if (req.dietaryTags != null) product.setDietaryTags(normalizeTags(req.dietaryTags));
+        if (req.allergens != null) product.setAllergens(normalizeTags(req.allergens));
+        if (req.allergenInfoComplete != null) product.setAllergenInfoComplete(req.allergenInfoComplete);
         if (req.stock != null) {
             product.setStock(req.stock);
             product.setStatus(req.stock == 0 ? Product.Status.OUT_OF_STOCK : Product.Status.ACTIVE);
@@ -208,5 +223,42 @@ public class ProductService {
         return products.stream()
                 .map(this::enrichWithCategoryName)
                 .toList();
+    }
+
+    /**
+     * Returns only currently purchasable products. Filtering is deliberately
+     * deterministic and happens before any model call.
+     */
+    public List<ProductResponse> findConsultationCandidates(ConsultationFilterRequest filter) {
+        List<Product> products = productRepository.find("status = ?1 and stock > 0", Product.Status.ACTIVE).list();
+        Set<String> excludedAllergens = normalizeTags(filter.excludedAllergens == null
+                ? Set.of() : Set.copyOf(filter.excludedAllergens));
+        Set<String> dietaryRequirements = normalizeTags(filter.dietaryRequirements == null
+                ? Set.of() : Set.copyOf(filter.dietaryRequirements));
+        Set<String> flavorPreferences = normalizeTags(filter.flavors == null
+                ? Set.of() : Set.copyOf(filter.flavors));
+        boolean allergyFilter = "CONFIRMED".equalsIgnoreCase(filter.allergyCertainty)
+                && !excludedAllergens.isEmpty();
+
+        return products.stream()
+                .filter(product -> filter.budgetMax == null || product.getPrice().compareTo(filter.budgetMax) <= 0)
+                .filter(product -> dietaryRequirements.isEmpty()
+                        || product.getDietaryTags().containsAll(dietaryRequirements))
+                .filter(product -> !allergyFilter
+                        || (product.isAllergenInfoComplete()
+                        && java.util.Collections.disjoint(product.getAllergens(), excludedAllergens)))
+                .filter(product -> flavorPreferences.isEmpty()
+                        || flavorPreferences.contains("ANY")
+                        || !java.util.Collections.disjoint(product.getFlavorTags(), flavorPreferences))
+                .map(this::enrichWithCategoryName)
+                .toList();
+    }
+
+    private Set<String> normalizeTags(Set<String> tags) {
+        if (tags == null) return new HashSet<>();
+        return tags.stream()
+                .filter(tag -> tag != null && !tag.isBlank())
+                .map(tag -> tag.trim().toUpperCase())
+                .collect(java.util.stream.Collectors.toCollection(HashSet::new));
     }
 }
